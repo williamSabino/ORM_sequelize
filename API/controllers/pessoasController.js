@@ -2,12 +2,21 @@ const dataBase = require('../models');
 const Op = require('sequelize');
 
 class PessoaController {
-    static async listarPessoas(req, res){
+    static async listarPessoasAtivas(req, res){
         try {
             const pessoas = await dataBase.pessoas.findAll();
             return res.status(200).json(pessoas);
         } catch (error) {
             return res.status(400).json({message: "Error de requisição !!"});
+        }
+    }
+
+    static async listarTodasAsPessoas(req, res){
+        try {
+            const pessoas = await dataBase.pessoas.scope("todos").findAll();
+            return res.status(200).json(pessoas);
+        } catch (error) {
+            return res.status(400).json({message: "Error de requisição !!!"});
         }
     }
 
@@ -52,7 +61,7 @@ class PessoaController {
 
     static async DeletarPessoaPorId(req, res) {
         try {
-            const {id} = req.query;
+            const {id} = req.params;
             const deletar = await dataBase.pessoas.destroy({
                 where: {
                     id: id,
@@ -90,6 +99,32 @@ class PessoaController {
             console.log(matricula);
             await dataBase.matriculas.create(matricula);
             return res.status(200).json({message: 'success'});
+        } catch (error) {
+            return res.status(400).json({error: "Requisição incorreta"});
+        }
+    }
+
+
+    //Restaurar soft deletes
+    static async RestorePessoa(req, res) {
+        try {
+            const {id} = req.params;
+            await dataBase.pessoas.restore({where: {id: id}});
+            return res.status(200).json({message: 'Restored successfully'});
+        } catch (error) {
+            return res.status(400).json({error: "Requisição incorreta"});
+        }
+    }
+
+
+    //Buscar matriculas por estudante de estatus confirmado
+
+    static async ListarMatriculasConfirmadasPorID (req,res){
+        const {id} = req.params;
+        try {
+            const pessoa = await dataBase.pessoas.findOne({where:{id:id}});
+            const matricula = await pessoa.getMatriculasConfirmadas();
+            return res.status(200).json(matricula);
         } catch (error) {
             return res.status(400).json({error: "Requisição incorreta"});
         }
